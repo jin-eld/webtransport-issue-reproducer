@@ -1,0 +1,41 @@
+[package]
+name = "wasm-client"
+version.workspace = true                                                        
+edition.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+common = { path = "../common" }
+
+bytes.workspace = true
+fastrand.workspace = true
+
+console_error_panic_hook = "0.1"
+console_log = "1.0"
+hex = "0.4"
+log = { version = "0.4", default-features = false }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = [
+    "console",
+    "ReadableStream",
+    "WebTransport",
+    "WebTransportBidirectionalStream",
+    "WebTransportCloseInfo",
+    "WebTransportDatagramDuplexStream",
+    "WebTransportReceiveStream",
+    "WebTransportSendStream",
+    "WritableStream",
+    "WritableStreamDefaultWriter",
+    "WebTransportOptions",
+    "WebTransportCongestionControl",
+    "ReadableStreamGetReaderOptions",
+    "ReadableStreamDefaultReader",
+    "ReadableStreamReaderMode"] }
+
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "web_sys_unstable_apis"]

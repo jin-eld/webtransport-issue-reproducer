@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    "native",
+    "wasm-client"
+]
+
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+rust-version = "1.73.0"
+
+[workspace.dependencies]
+bytes = "1.5"
+fastrand = "2"

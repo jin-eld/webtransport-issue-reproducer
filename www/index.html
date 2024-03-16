@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>                                                                          
+<head>                                                                          
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+</head>
+<body>
+    <script type="module">
+        import init, { client } from "./wasm_client.js";
+        
+        async function main() {
+            await init();
+            client("26f4f4998ff787addf190a67a7ccb827ea4601db65610436e0e9b05b14b5be74");
+        }
+        main();
+    </script>
+</body>
+</html>
+
