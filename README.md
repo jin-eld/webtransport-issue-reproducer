@@ -25,6 +25,9 @@ The server uses a self signed certificate, which was generated as follows:
         -subj "/CN=localhost"
 ```
 
+Upon startup the server prints a hash which needs to be entered in
+index.html each time the keys get regenerated.
+
 ## Client
 
 The client connects to `https://127.0.0.1:50443` using the WebTransport
