@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>                                                                          
+<head>                                                                          
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+</head>
+<body>
+    <script type="module">
+
+        const SERVER_CERT_HASH =
+            "26f4f4998ff787addf190a67a7ccb827ea4601db65610436e0e9b05b14b5be74";
+        const URL = "https://127.0.0.1:50443"
+        const NUM_SEND_CHUNKS = 128;
+        const CHUNK_SIZE_BYTES = 65535;
+        const CHUNK_CONT = 0x00;
+        const CHUNK_LAST = 0xff;
+        const ACK = 0xaa;
+
+
+        async function send_chunks(stream, num_chunks, chunk_buffer) {
+
+            const writer = stream.writable.getWriter();
+
+            const sb = new ArrayBuffer(2);
+            const view = new DataView(sb);
+            view.setUint16(0, num_chunks, false); // false for BE
+            await writer.write(sb);
+
+            const encoder = new TextEncoder();
+
+            console.log("Sending {} chunks", num_chunks);
+            let start_index = 0;
+
+            let cblen = chunk_buffer.length;
+
+            for (let i = 0; i < NUM_SEND_CHUNKS; i++) {
+                console.log("sending chunk {}", i + 1);
+
+                let slice = chunk_buffer.slice(start_index,
+                        start_index + CHUNK_SIZE_BYTES);
+
+                let terminate = CHUNK_CONT;
+                if (i == (NUM_SEND_CHUNKS - 1)) {
+                    terminate = CHUNK_LAST;
+                }
+
+                slice[CHUNK_SIZE_BYTES - 1] = terminate;
+
+                await writer.write(slice);
+
+                start_index += CHUNK_SIZE_BYTES;
+                if ((start_index + CHUNK_SIZE_BYTES) > cblen) {
+                    start_index = 0;
+                }
+            }
+
+            await writer.close();
+            writer.releaseLock();
+
+            const reader = stream.readable.getReader();
+            const { value, done } = await reader.read();
+
+            let decoder = new TextDecoder('utf-8');
+            if (done) {
+                console.log("reader: unexpected end of stream");
+                reader.cancel();
+                reader.releaseLock();
+                return;
+            }
+
+            let data = decoder.decode(value);
+            if ((data.length == 1) && (data[0] == ACK)) {
+                console.log("ACK received, all good");
+            } else {
+                console.log("ERROR: received unexpected ACK byte from server!");
+            }
+
+            reader.cancel();
+            reader.releaseLock();
+        }
+
+        function hex_str_to_Uint8Array(hex_str) {
+            const bytes = new Uint8Array(Math.ceil(hex_str.length / 2));
+            for (let i = 0; i < bytes.length; i++) {
+                bytes[i] = parseInt(hex_str.substr(i * 2, 2), 16);
+            }
+            return bytes;
+        }
+
+        async function main() {
+            const buffer_size = 4 * 1024 * 1024; // 4MB
+            const buffer = new Uint8Array(buffer_size);
+            for (let i = 0; i < buffer_size; i += CHUNK_SIZE_BYTES) {
+                window.crypto.getRandomValues(
+                        buffer.subarray(i, i + CHUNK_SIZE_BYTES));
+            }
+
+            let wt = new WebTransport(URL, {
+                        serverCertificateHashes: [
+                            {
+                                algorithm: "sha-256",
+                                value: hex_str_to_Uint8Array(SERVER_CERT_HASH)
+                            }
+                        ],
+                        congestionControl: "throughput",
+                        requireUnreliable: false,
+                    });
+
+            await wt.ready;
+
+            const stream = await wt.createBidirectionalStream();
+
+            await send_chunks(stream, NUM_SEND_CHUNKS, buffer);
+        }
+        main();
+    </script>
+</body>
+</html>
+
