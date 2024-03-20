@@ -59,23 +59,15 @@
             const reader = stream.readable.getReader();
             const { value, done } = await reader.read();
 
-            let decoder = new TextDecoder('utf-8');
-            if (done) {
-                console.log("reader: unexpected end of stream");
-                reader.cancel();
-                reader.releaseLock();
-                return;
-            }
+            reader.cancel();
+            reader.releaseLock();
 
-            let data = decoder.decode(value);
-            if ((data.length == 1) && (data[0] == ACK)) {
+            if ((value.length == 1) && (value[0] == ACK)) {
                 console.log("ACK received, all good");
             } else {
                 console.log("ERROR: received unexpected ACK byte from server!");
             }
 
-            reader.cancel();
-            reader.releaseLock();
         }
 
         function hex_str_to_Uint8Array(hex_str) {
